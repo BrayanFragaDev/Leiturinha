@@ -37,3 +37,14 @@ test('formatDate usa toLocaleDateString pt-BR', () => {
   const ms = Date.UTC(2026, 0, 15, 12);
   assert.equal(formatDate(ms), new Date(ms).toLocaleDateString('pt-BR'));
 });
+
+test('formatDate devolve vazio para valor não finito', () => {
+  assert.equal(formatDate(NaN), '');
+  assert.equal(formatDate(undefined), '');
+  assert.equal(formatDate(Infinity), '');
+});
+
+test('formatSize arredonda bytes fracionários para baixo', () => {
+  assert.equal(formatSize(1023.7), '1023 B');
+  assert.equal(formatSize(0.9), '0 B');
+});

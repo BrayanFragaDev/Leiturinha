@@ -207,7 +207,7 @@ export function buildFixtures() {
   };
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const dir = fileURLToPath(new URL('../fixtures/', import.meta.url));
   mkdirSync(dir, { recursive: true });
   for (const [name, bytes] of Object.entries(buildFixtures())) {

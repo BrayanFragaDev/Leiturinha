@@ -191,3 +191,14 @@ test('getFile devolve o blob e updateMeta altera só campos definidos', async ()
   assert.equal(up.title, 'amostra');
   assert.equal((await lib.get(book.id)).cover.size, 1);
 });
+
+test('empate nas três ordenações desempata por id (estável)', async () => {
+  const ids = { 'z.pdf': 'c3', 'y.pdf': 'a1', 'x.pdf': 'b2' };
+  const { lib } = setup({ hash: async (f) => ids[f.name] });
+  for (const name of ['z.pdf', 'y.pdf', 'x.pdf']) {
+    await lib.addFile(fake(name, name), { title: 'Mesmo título' });
+  }
+  for (const sort of ['recentes', 'adicionados', 'titulo']) {
+    assert.deepEqual((await lib.list({ sort })).map((b) => b.id), ['a1', 'b2', 'c3'], sort);
+  }
+});
