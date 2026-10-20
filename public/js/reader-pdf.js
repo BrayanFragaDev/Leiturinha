@@ -69,6 +69,10 @@ export async function openPdfReader(container, blob) {
   let destroyed = false;
   let lastWidth = root.clientWidth;
   const listeners = [];
+  const DESTROYED = Symbol('destroyed');
+  let signalDestroyed;
+  // Resolve ao destruir: promessas pendentes do pdf.js nunca terminam depois do doc.destroy().
+  const whenDestroyed = new Promise((resolve) => (signalDestroyed = () => resolve(DESTROYED)));
 
   function fractionOf(n) {
     return numPages === 1 ? 1 : (n - 1) / (numPages - 1);
@@ -80,7 +84,13 @@ export async function openPdfReader(container, blob) {
     textLayer?.cancel();
     const pageNumber = current;
 
-    const page = await doc.getPage(pageNumber);
+    let page;
+    try {
+      page = await doc.getPage(pageNumber);
+    } catch (err) {
+      if (destroyed || gen !== generation) return;
+      throw err;
+    }
     if (gen !== generation) return;
 
     const base = page.getViewport({ scale: 1 });
@@ -112,7 +122,7 @@ export async function openPdfReader(container, blob) {
     try {
       await task.promise;
     } catch (err) {
-      if (err?.name === 'RenderingCancelledException') return;
+      if (destroyed || gen !== generation || err?.name === 'RenderingCancelledException') return;
       throw err;
     }
     if (gen !== generation) return;
@@ -126,11 +136,12 @@ export async function openPdfReader(container, blob) {
     try {
       await layer.render();
     } catch (err) {
-      if (!/cancel/i.test(String(err?.message || err))) throw err;
-      return;
+      if (destroyed || gen !== generation || /cancel/i.test(String(err?.message || err))) return;
+      throw err;
     }
     if (gen !== generation) return;
 
+    canvas.style.filter = THEME_FILTERS[theme]; // tema pode ter mudado durante o render
     pageEl.style.width = canvas.style.width;
     pageEl.style.height = canvas.style.height;
     pageEl.replaceChildren(canvas, textEl);
@@ -243,8 +254,17 @@ export async function openPdfReader(container, blob) {
       const needle = normalizeWithMap(String(query ?? '').trim()).norm;
       if (!needle) return;
       for (let n = 1; n <= numPages && !destroyed; n++) {
-        const page = await doc.getPage(n);
-        const content = await page.getTextContent();
+        let content;
+        try {
+          content = await Promise.race([
+            doc.getPage(n).then((page) => page.getTextContent()),
+            whenDestroyed,
+          ]);
+        } catch (err) {
+          if (destroyed) return;
+          throw err;
+        }
+        if (destroyed || content === DESTROYED) return;
         let text = '';
         for (const item of content.items) {
           text += item.str;
@@ -288,6 +308,7 @@ export async function openPdfReader(container, blob) {
 
     destroy() {
       destroyed = true;
+      signalDestroyed();
       generation++;
       renderTask?.cancel();
       textLayer?.cancel();
