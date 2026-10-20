@@ -132,6 +132,7 @@ export function mountLibraryView(root, { library, store, onOpen }) {
       } else if (err instanceof LibraryError && err.code === 'quota') {
         showToast(`Sem espaço no navegador para este arquivo (${formatSize(file.size)}).`);
       } else {
+        console.error(`Falha ao importar ${file.name}:`, err);
         showToast(`Não foi possível abrir ${file.name}`);
       }
       return;
@@ -152,6 +153,7 @@ export function mountLibraryView(root, { library, store, onOpen }) {
       if (Object.keys(fields).length) await library.updateMeta(book.id, fields);
       requestPersistence();
     } catch (err) {
+      console.error(`Falha ao abrir ${file.name}:`, err);
       try { await library.remove(book.id); } catch { /* nada a limpar */ }
       showToast(err?.code === 'drm'
         ? `Este livro tem DRM e não pode ser aberto: ${file.name}`
