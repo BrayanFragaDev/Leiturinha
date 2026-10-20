@@ -149,6 +149,12 @@ export async function openFoliateReader(container, blob) {
       });
       if (!view.dispatchEvent(copy) || copy.defaultPrevented) e.preventDefault();
     });
+    // Soltar um arquivo sobre o livro faria o iframe navegar até o arquivo.
+    const blockFileDrop = (e) => {
+      if ([...(e.dataTransfer?.types ?? [])].includes('Files')) e.preventDefault();
+    };
+    doc.addEventListener('dragover', blockFileDrop);
+    doc.addEventListener('drop', blockFileDrop);
   }
   view.addEventListener('load', onSectionLoad);
 

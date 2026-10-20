@@ -170,31 +170,43 @@ export function mountLibraryView(root, { library, store, onOpen }) {
   });
   select.addEventListener('change', () => { sort = select.value; refresh(); });
 
-  // Arrastar e soltar; o contador evita o dragleave disparado por filhos.
+  // Arrastar e soltar na página inteira: soltar fora de #biblioteca (margens, abaixo de uma
+  // estante curta) não pode deixar o navegador abrir o arquivo no lugar do app. Com a biblioteca
+  // oculta (tela de leitura) o drop só é bloqueado, sem importar.
+  // O contador evita o dragleave disparado ao passar de um elemento para outro.
   let depth = 0;
   const hasFiles = (e) => [...(e.dataTransfer?.types ?? [])].includes('Files');
-  root.addEventListener('dragenter', (e) => {
+  const active = () => !root.hidden;
+  const clearDragging = () => {
+    depth = 0;
+    shelf.classList.remove('arrastando');
+  };
+  document.addEventListener('dragenter', (e) => {
     if (!hasFiles(e)) return;
     e.preventDefault();
+    if (!active()) return;
     depth++;
     shelf.classList.add('arrastando');
   });
-  root.addEventListener('dragover', (e) => {
+  document.addEventListener('dragover', (e) => {
     if (!hasFiles(e)) return;
     e.preventDefault();
+    if (!active()) {
+      e.dataTransfer.dropEffect = 'none';
+      return;
+    }
     shelf.classList.add('arrastando');
   });
-  root.addEventListener('dragleave', (e) => {
-    if (!hasFiles(e)) return;
+  document.addEventListener('dragleave', (e) => {
+    if (!hasFiles(e) || !active()) return;
     depth = Math.max(0, depth - 1);
     if (depth === 0) shelf.classList.remove('arrastando');
   });
-  root.addEventListener('drop', (e) => {
+  document.addEventListener('drop', (e) => {
     if (!hasFiles(e)) return;
     e.preventDefault();
-    depth = 0;
-    shelf.classList.remove('arrastando');
-    importFiles(e.dataTransfer.files);
+    clearDragging();
+    if (active()) importFiles(e.dataTransfer.files);
   });
 
   return { refresh };
