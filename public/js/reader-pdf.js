@@ -49,6 +49,7 @@ export async function openPdfReader(container, blob) {
     cMapUrl: CMAP_URL,
     cMapPacked: true,
     standardFontDataUrl: FONTS_URL,
+    isEvalSupported: false, // a CSP não libera 'unsafe-eval'
   }).promise;
   const numPages = doc.numPages;
 

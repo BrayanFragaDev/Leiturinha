@@ -61,7 +61,11 @@ function buildPdf() {
   return concat(parts);
 }
 
-function buildEpub() {
+const DEFAULT_CAP1 =
+  `<h1>Capítulo 1</h1>\n<p>Era uma vez um leitor curioso que abriu o primeiro capítulo numa tarde tranquila.</p>`;
+
+// cap1: corpo do capítulo 1; extra: entradas a mais no zip (ex.: META-INF/encryption.xml).
+function buildEpub({ cap1 = DEFAULT_CAP1, extra = [] } = {}) {
   const xhtml = (title, body) =>
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="pt-BR">\n` +
@@ -108,10 +112,7 @@ function buildEpub() {
     },
     {
       name: 'OEBPS/cap1.xhtml',
-      data: xhtml(
-        'Capítulo 1',
-        `<h1>Capítulo 1</h1>\n<p>Era uma vez um leitor curioso que abriu o primeiro capítulo numa tarde tranquila.</p>`,
-      ),
+      data: xhtml('Capítulo 1', cap1),
     },
     {
       name: 'OEBPS/cap2.xhtml',
@@ -120,7 +121,20 @@ function buildEpub() {
         `<h1>Capítulo 2</h1>\n<p>No segundo capítulo, um girassol cresceu devagar ao lado da janela.</p>`,
       ),
     },
+    ...extra,
   ]);
+}
+
+// ePub de sonda: script inline e recursos remotos que a CSP do app deve bloquear.
+function buildProbeEpub() {
+  return buildEpub({
+    cap1:
+      `<h1>Capítulo 1</h1>\n` +
+      `<script>window.top.document.title = 'SONDA EXECUTOU'; window.top.__sonda = true;</script>\n` +
+      `<p onclick="window.top.__sonda = true">Sonda de segurança.</p>\n` +
+      `<img src="http://127.0.0.1:9/sonda.png" alt="sonda"/>\n` +
+      `<link rel="stylesheet" href="http://127.0.0.1:9/sonda.css"/>`,
+  });
 }
 
 // PNG 1×1 válido (CRCs corretos).
@@ -161,6 +175,7 @@ export function buildFixtures() {
     'amostra.pdf': buildPdf(),
     'amostra.epub': buildEpub(),
     'amostra.cbz': buildCbz(),
+    'sonda.epub': buildProbeEpub(),
     'falso.pdf': utf8('isto não é pdf'),
   };
 }
