@@ -137,12 +137,23 @@ export function mountLibraryView(root, { library, store, onOpen }) {
     }
   }
 
-  async function importFiles(fileList) {
+  // Fila: eventos seguidos (dois drops, dois change) são processados um após o outro.
+  let queue = Promise.resolve();
+  function importFiles(fileList) {
     const files = [...fileList];
-    for (const file of files) {
-      await importOne(file, files.length === 1);
-      await refresh();
-    }
+    const run = async () => {
+      for (const file of files) {
+        try {
+          await importOne(file, files.length === 1);
+        } catch (err) {
+          console.error(err);
+          showToast(`Não foi possível abrir ${file.name}`);
+        }
+        await refresh();
+      }
+    };
+    queue = queue.then(run).catch((err) => console.error(err));
+    return queue;
   }
 
   fileInput.addEventListener('change', async () => {
