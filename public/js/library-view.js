@@ -98,10 +98,28 @@ export function mountLibraryView(root, { library, store, onOpen }) {
     remove.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!confirm(`Remover "${book.title}" da biblioteca?`)) return;
-      await library.remove(book.id);
-      await refresh();
+      try {
+        await library.remove(book.id);
+      } catch (err) {
+        console.error(err);
+        showToast(`Não foi possível remover ${book.title}`);
+      }
+      try { await refresh(); } catch (err) { console.error(err); }
     });
     return el('article', { className: 'cartao' }, open, remove);
+  }
+
+  // Pede ao navegador para não apagar os livros sob pressão de espaço. Best-effort, uma vez,
+  // depois da primeira importação bem-sucedida.
+  let persistenceRequested = false;
+  function requestPersistence() {
+    if (persistenceRequested || store.persistent === false) return;
+    persistenceRequested = true;
+    try {
+      navigator.storage?.persist?.()?.catch?.(() => {});
+    } catch {
+      // sem suporte
+    }
   }
 
   async function importOne(file, single) {
@@ -127,10 +145,12 @@ export function mountLibraryView(root, { library, store, onOpen }) {
     try {
       const meta = await extractMeta(file, book.format);
       const fields = {};
-      if (meta?.title) fields.title = meta.title;
+      // O foliate usa o nome do arquivo como título quando o livro não tem um (ex.: CBZ).
+      if (meta?.title && meta.title !== file.name) fields.title = meta.title;
       if (meta?.author) fields.author = meta.author;
       if (meta?.cover) fields.cover = meta.cover;
       if (Object.keys(fields).length) await library.updateMeta(book.id, fields);
+      requestPersistence();
     } catch (err) {
       try { await library.remove(book.id); } catch { /* nada a limpar */ }
       showToast(err?.code === 'drm'

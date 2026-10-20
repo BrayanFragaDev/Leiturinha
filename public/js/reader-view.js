@@ -444,6 +444,8 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
         reader.next().catch(() => {});
         break;
       case ' ':
+        // Espaço num botão ou link aciona o controle, não vira a página.
+        if (t instanceof Element && t.closest('button, a[href], [role="button"]')) return;
         e.preventDefault();
         reader.next().catch(() => {});
         break;

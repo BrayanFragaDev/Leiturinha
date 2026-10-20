@@ -6,6 +6,7 @@
 
 import * as pdfjs from '../vendor/pdfjs/build/pdf.min.mjs';
 import { toPdfLocation, parsePdfLocation } from './locations.js';
+import { formatPercent } from './format.js';
 
 const { getDocument, GlobalWorkerOptions, TextLayer } = pdfjs;
 
@@ -44,13 +45,21 @@ function normalizeWithMap(text) {
  */
 export async function openPdfReader(container, blob) {
   const data = new Uint8Array(await blob.arrayBuffer());
-  const doc = await getDocument({
+  const loadingTask = getDocument({
     data,
     cMapUrl: CMAP_URL,
     cMapPacked: true,
     standardFontDataUrl: FONTS_URL,
     isEvalSupported: false, // a CSP não libera 'unsafe-eval'
-  }).promise;
+  });
+  let doc;
+  try {
+    doc = await loadingTask.promise;
+  } catch (err) {
+    // arquivo corrompido: libera o worker antes de relançar
+    try { await loadingTask.destroy(); } catch { /* já liberado */ }
+    throw err;
+  }
   const numPages = doc.numPages;
 
   container.replaceChildren();
@@ -148,10 +157,11 @@ export async function openPdfReader(container, blob) {
     pageEl.replaceChildren(canvas, textEl);
     root.scrollTop = 0;
 
+    const fraction = fractionOf(pageNumber);
     const payload = {
       location: toPdfLocation(pageNumber),
-      fraction: fractionOf(pageNumber),
-      label: `Página ${pageNumber} de ${numPages}`,
+      fraction,
+      label: `Página ${pageNumber} de ${numPages} · ${formatPercent(fraction)}`,
     };
     for (const cb of listeners) cb(payload);
   }

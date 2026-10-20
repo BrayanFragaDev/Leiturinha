@@ -27,8 +27,9 @@ public/            site estático (é o que vai para a hospedagem)
     prefs.js       tema e fonte (localStorage)
     format.js      formatação de %, tamanho e data
     locations.js   locais de PDF ("pdf:<página>")
-    cover-color.js cor da capa gerada a partir do título
+    cover-color.js cor da capa gerada a partir do id do livro
     toast.js       avisos curtos na tela
+    drm.js         regra de detecção de DRM (ePub e MOBI/AZW3)
     reader-pdf.js      adaptador pdf.js
     reader-foliate.js  adaptador foliate-js (epub, mobi, azw3, fb2, cbz)
     library-view.js, reader-view.js   telas
@@ -48,5 +49,6 @@ fixtures/          arquivos de exemplo gerados (não versionados)
 - Regras puras (sem DOM) ficam em módulos testáveis no Node. O código que depende de DOM ou IndexedDB recebe as dependências por parâmetro.
 - `localStorage` e IndexedDB sempre ficam dentro de try/catch. Se falharem, o app continua funcionando em modo temporário.
 - Nada é enviado para fora do navegador: sem CDN em tempo de execução, sem analytics e sem fetch para terceiros.
+- A Content-Security-Policy de `index.html` também vale para os iframes dos livros. Ela não pode liberar script do livro, `'unsafe-eval'` nem origens remotas.
 - Arquivos em `public/vendor/` não são editados. Para atualizar, troque a versão inteira e registre em `public/vendor/README.md`.
 - Mudanças visíveis são verificadas no navegador (preview "leitor" em `.claude/launch.json`).
