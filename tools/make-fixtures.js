@@ -65,7 +65,7 @@ const DEFAULT_CAP1 =
   `<h1>Capítulo 1</h1>\n<p>Era uma vez um leitor curioso que abriu o primeiro capítulo numa tarde tranquila.</p>`;
 
 // cap1: corpo do capítulo 1; extra: entradas a mais no zip (ex.: META-INF/encryption.xml).
-function buildEpub({ cap1 = DEFAULT_CAP1, extra = [] } = {}) {
+function buildEpub({ cap1 = DEFAULT_CAP1, extra = [], titleXml = '<dc:title>Livro de Amostra</dc:title>' } = {}) {
   const xhtml = (title, body) =>
     `<?xml version="1.0" encoding="UTF-8"?>\n` +
     `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops" lang="pt-BR">\n` +
@@ -88,7 +88,7 @@ function buildEpub({ cap1 = DEFAULT_CAP1, extra = [] } = {}) {
         `<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="bookid" xml:lang="pt-BR">\n` +
         `  <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n` +
         `    <dc:identifier id="bookid">urn:uuid:5f0c1b7e-3a1d-4c55-9a3e-0a7d9c6b2e11</dc:identifier>\n` +
-        `    <dc:title>Livro de Amostra</dc:title>\n` +
+        `    ${titleXml}\n` +
         `    <dc:creator>Autora Teste</dc:creator>\n` +
         `    <dc:language>pt-BR</dc:language>\n` +
         `    <meta property="dcterms:modified">2024-01-01T00:00:00Z</meta>\n` +
@@ -203,11 +203,17 @@ export function buildFixtures() {
     'amostra.cbz': buildCbz(),
     'drm.epub': buildDrmEpub(),
     'sonda.epub': buildProbeEpub(),
+    // título em dois idiomas (en e pt): o leitor deve escolher o português
+    'idiomas.epub': buildEpub({
+      titleXml:
+        '<dc:title id="t" xml:lang="en">Sample Book</dc:title>' +
+        '<meta refines="#t" property="alternate-script" xml:lang="pt">Livro Bilíngue</meta>',
+    }),
     'falso.pdf': utf8('isto não é pdf'),
   };
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const dir = fileURLToPath(new URL('../fixtures/', import.meta.url));
   mkdirSync(dir, { recursive: true });
   for (const [name, bytes] of Object.entries(buildFixtures())) {

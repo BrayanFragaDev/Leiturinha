@@ -20,7 +20,7 @@ export async function sha256Hex(blob) {
   return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-const fold = (s) => String(s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+const fold = (s) => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 const stripExt = (name) => name.replace(/\.[^./\\]+$/, '');
 
 // Copia só os campos de meta com valor definido (título vazio mantém o padrão).
@@ -71,12 +71,15 @@ export function createLibrary(store, { now = Date.now, hash = sha256Hex } = {}) 
     let books = await store.getAll('books');
     const q = fold(query).trim();
     if (q) books = books.filter((b) => fold(b.title).includes(q) || fold(b.author).includes(q));
+    // Empates caem para o id, para a ordem não depender da ordem do armazenamento.
+    const byId = (a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
     const by = {
       recentes: (a, b) => (b.lastOpenedAt ?? b.addedAt) - (a.lastOpenedAt ?? a.addedAt),
       adicionados: (a, b) => b.addedAt - a.addedAt,
       titulo: (a, b) => a.title.localeCompare(b.title, 'pt-BR', { sensitivity: 'base' }),
     };
-    return books.sort(by[sort] ?? by.recentes);
+    const primary = by[sort] ?? by.recentes;
+    return books.sort((a, b) => primary(a, b) || byId(a, b));
   }
 
   async function getFile(id) {

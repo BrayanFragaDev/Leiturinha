@@ -34,7 +34,7 @@ function resolveFile(urlPath) {
   } catch {
     return null;
   }
-  if (rel.split(/[\/]/).includes('..')) return null;
+  if (rel.split(/[\\/]/).includes('..')) return null;
   let base = PUBLIC_DIR;
   if (rel.startsWith('/fixtures/')) {
     base = FIXTURES_DIR;
@@ -68,7 +68,7 @@ export function createAppServer() {
   });
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   const port = Number(process.env.PORT) || 5174;
   createAppServer().listen(port, () => console.log(`Leitor em http://localhost:${port}`));
 }

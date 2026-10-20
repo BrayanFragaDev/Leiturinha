@@ -26,6 +26,22 @@ function buildCss(theme, fontSize) {
   `;
 }
 
+// Objeto de idiomas ({en: 'Title', pt: 'Título'}): escolhe um só valor, na ordem pt-BR, pt, und
+// e, por último, o primeiro que houver.
+const LANGUAGE_ORDER = ['pt-br', 'pt', 'und'];
+function pickLanguage(map) {
+  const entries = Object.entries(map);
+  for (const wanted of LANGUAGE_ORDER) {
+    const hit = entries.find(([lang]) => lang.toLowerCase().replace('_', '-') === wanted);
+    if (hit && normalizeName(hit[1])) return normalizeName(hit[1]);
+  }
+  for (const [, v] of entries) {
+    const text = normalizeName(v);
+    if (text) return text;
+  }
+  return '';
+}
+
 // title/author podem ser string, objeto ({pt: '...'}, {name: ...}) ou lista.
 function normalizeName(value) {
   if (value == null) return '';
@@ -35,7 +51,7 @@ function normalizeName(value) {
   }
   if (typeof value === 'object') {
     if ('name' in value) return normalizeName(value.name);
-    return Object.values(value).map(normalizeName).filter(Boolean).join(', ');
+    return pickLanguage(value);
   }
   return '';
 }
@@ -53,6 +69,12 @@ function tocOf(items) {
     location: typeof item.href === 'string' ? item.href : '',
     children: tocOf(item.subitems),
   }));
+}
+
+function isEditable(node) {
+  if (!node || node.nodeType !== 1) return false;
+  if (node.isContentEditable) return true;
+  return ['INPUT', 'TEXTAREA', 'SELECT'].includes(node.tagName?.toUpperCase());
 }
 
 // O foliate não recusa livros com DRM: no ePub um algoritmo desconhecido só gera aviso e no
@@ -82,6 +104,7 @@ export async function openFoliateReader(container, blob) {
   container.append(view);
 
   let destroyed = false;
+  let rendered = false; // só depois de navegar o paginator tem uma visão para fechar
   let theme = 'claro';
   let fontSize = DEFAULT_FONT;
   const listeners = [];
@@ -143,6 +166,7 @@ export async function openFoliateReader(container, blob) {
     const doc = event.detail?.doc;
     if (!doc) return;
     doc.addEventListener('keydown', (e) => {
+      if (isEditable(e.target)) return; // quem digita num campo do livro mantém as teclas
       const copy = new KeyboardEvent('keydown', {
         key: e.key, code: e.code, ctrlKey: e.ctrlKey, altKey: e.altKey, metaKey: e.metaKey,
         shiftKey: e.shiftKey, bubbles: true, cancelable: true,
@@ -164,6 +188,7 @@ export async function openFoliateReader(container, blob) {
   async function guard(fn) {
     await null; // dá chance de um destroy() síncrono logo após a chamada
     if (destroyed) return undefined;
+    rendered = true;
     const running = fn();
     running.catch(() => {}); // erro depois do destroy não vira rejeição solta
     try {
@@ -202,6 +227,7 @@ export async function openFoliateReader(container, blob) {
 
   return {
     async meta() {
+      if (destroyed) return { cover: null };
       const result = { cover: null };
       const metadata = book.metadata || {};
       const title = normalizeName(metadata.title);
@@ -209,7 +235,7 @@ export async function openFoliateReader(container, blob) {
       if (title) result.title = title;
       if (author) result.author = author;
       try {
-        const cover = await book.getCover?.();
+        const cover = await Promise.race([book.getCover?.(), whenDestroyed]);
         result.cover = cover instanceof Blob ? cover : null;
       } catch {
         result.cover = null;
@@ -218,6 +244,7 @@ export async function openFoliateReader(container, blob) {
     },
 
     async toc() {
+      if (destroyed) return [];
       return tocOf(book.toc);
     },
 
@@ -303,10 +330,14 @@ export async function openFoliateReader(container, blob) {
       view.removeEventListener('relocate', onRelocate);
       view.removeEventListener('load', onSectionLoad);
       listeners.length = 0;
-      try {
-        view.close();
-      } catch {
-        // já fechado
+      // Sem navegação (ex.: extração de metadados na importação) o Paginator.destroy do vendor
+      // lança, porque não há visão (#view é null). Nesse caso só remove o elemento.
+      if (rendered) {
+        try {
+          view.close();
+        } catch {
+          // já fechado
+        }
       }
       view.remove();
       try {

@@ -39,12 +39,26 @@ Livros com DRM são recusados com o aviso "Este livro tem DRM e não pode ser ab
 
 Qualquer hospedagem estática serve. Publique a pasta `public/`, sem comando de build.
 
-| Serviço | Como publicar `public/` |
-|---|---|
-| Netlify | Build command em branco; Publish directory: `public` |
-| Vercel | Framework "Other", sem build command; Output directory: `public` |
-| GitHub Pages | Publicar uma subpasta exige uma GitHub Action (por exemplo, `actions/upload-pages-artifact` com `path: public`) ou mover o conteúdo de `public/` para a raiz/pasta publicada |
-| Cloudflare Pages | Sem build command; Build output directory: `public` |
+### GitHub Pages
+
+O workflow `.github/workflows/pages.yml` já existe e publica `public/` a cada push no `master` (ou manualmente, por "Run workflow"). Uma única vez, vá em Settings → Pages → Build and deployment → Source e escolha "GitHub Actions". O endereço fica https://brayanfragadev.github.io/Leiturinha/. O Pages não envia cabeçalhos próprios, então vale a CSP da meta tag de `index.html`.
+
+### Firebase Hosting
+
+```bash
+npm install -g firebase-tools
+firebase login
+firebase use --add
+firebase deploy --only hosting
+```
+
+O `firebase.json` já aponta para `public/` e envia a CSP como cabeçalho.
+
+### Outras opções
+
+- Netlify: build command em branco; Publish directory: `public` (o arquivo `public/_headers` envia os cabeçalhos).
+- Cloudflare Pages: sem build command; Build output directory: `public` (também usa `public/_headers`).
+- Vercel: framework "Other", sem build command; Output directory: `public`.
 
 ## Estrutura
 

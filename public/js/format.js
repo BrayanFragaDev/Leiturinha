@@ -18,7 +18,7 @@ export function formatPercent(f) {
  */
 export function formatSize(bytes) {
   const n = Number.isFinite(bytes) && bytes > 0 ? bytes : 0;
-  if (n < 1024) return `${n} B`;
+  if (n < 1024) return `${Math.floor(n)} B`;
 
   let value = n;
   let unit = -1;
@@ -39,5 +39,6 @@ export function formatSize(bytes) {
  * @returns {string} data no formato local pt-BR
  */
 export function formatDate(ms) {
+  if (!Number.isFinite(ms)) return '';
   return new Date(ms).toLocaleDateString('pt-BR');
 }

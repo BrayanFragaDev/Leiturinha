@@ -188,7 +188,9 @@ export async function openPdfReader(container, blob) {
       const canvas = document.createElement('canvas');
       canvas.width = COVER_WIDTH;
       canvas.height = Math.max(1, Math.round(viewport.height));
-      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      // intent 'print' faz o pdf.js renderizar sem requestAnimationFrame (que o navegador pausa
+      // em aba oculta e travaria a fila de importação). Só a capa usa isso.
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport, intent: 'print' }).promise;
       return await new Promise((resolve) => canvas.toBlob((b) => resolve(b), 'image/png'));
     } catch {
       return null;
@@ -223,9 +225,14 @@ export async function openPdfReader(container, blob) {
 
   return {
     async meta() {
-      const result = { cover: await coverBlob() };
+      if (destroyed) return { cover: null };
+      const cover = await Promise.race([coverBlob(), whenDestroyed]);
+      if (cover === DESTROYED) return { cover: null };
+      const result = { cover };
       try {
-        const { info } = await doc.getMetadata();
+        const got = await Promise.race([doc.getMetadata(), whenDestroyed]);
+        if (got === DESTROYED) return result;
+        const { info } = got;
         const title = typeof info?.Title === 'string' ? info.Title.trim() : '';
         const author = typeof info?.Author === 'string' ? info.Author.trim() : '';
         if (title) result.title = title;
@@ -237,8 +244,12 @@ export async function openPdfReader(container, blob) {
     },
 
     async toc() {
+      if (destroyed) return [];
       try {
-        return await convertOutline(await doc.getOutline());
+        const outline = await Promise.race([doc.getOutline(), whenDestroyed]);
+        if (outline === DESTROYED) return [];
+        const items = await Promise.race([convertOutline(outline), whenDestroyed]);
+        return items === DESTROYED ? [] : items;
       } catch {
         return [];
       }
