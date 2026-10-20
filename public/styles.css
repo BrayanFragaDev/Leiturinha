@@ -115,3 +115,40 @@ body {
 
 #avisos { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
 .aviso { max-width: 100%; padding: 10px 16px; border-radius: 8px; background: #222; color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
+
+/* Tela de leitura */
+#leitura { height: 100dvh; }
+.leitor { display: flex; flex-direction: column; height: 100%; background: var(--fundo); color: var(--texto); }
+.leitor-topo { display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: 1px solid var(--borda); }
+.leitor-titulo { flex: 1 1 0; min-width: 0; margin: 0 4px; font-size: 1rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.leitor-btn, .leitor-painel button, .leitor-painel input, .leitor-rodape input { font: inherit; }
+.leitor-btn { display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto; min-width: 40px; min-height: 40px; padding: 4px 8px; justify-content: center; cursor: pointer; border: 1px solid transparent; border-radius: 6px; background: transparent; color: inherit; }
+.leitor-btn:hover, .leitor-btn[aria-expanded="true"] { background: color-mix(in srgb, var(--texto) 12%, transparent); }
+.leitor-btn .rotulo { display: none; }
+@media (min-width: 900px) { .leitor-btn .rotulo { display: inline; } }
+.leitor-corpo { position: relative; flex: 1 1 auto; min-height: 0; }
+.leitor-area { position: absolute; inset: 0; background: var(--fundo); overflow: hidden; }
+.leitor-zona { position: absolute; top: 0; bottom: 0; width: 20%; z-index: 2; cursor: pointer; }
+.leitor-zona-esq { left: 0; }
+.leitor-zona-dir { right: 17px; }
+.leitor-painel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 4; width: min(360px, 100%); padding: 12px 16px; overflow: auto; background: var(--fundo); color: var(--texto); border-left: 1px solid var(--borda); box-shadow: -2px 0 8px rgba(0, 0, 0, 0.25); }
+.leitor-painel h2 { margin: 0 0 12px; font-size: 1.1rem; }
+.leitor-painel button, .leitor-painel input[type="search"] { padding: 6px 10px; border: 1px solid var(--borda); border-radius: 6px; background: var(--fundo); color: var(--texto); cursor: pointer; }
+.leitor-painel .botao-primario { background: var(--destaque); color: #fff; border-color: transparent; }
+.leitor-painel button[aria-pressed="true"] { background: var(--destaque); color: #fff; border-color: transparent; }
+.leitor-lista { list-style: none; margin: 8px 0 0; padding: 0; }
+.leitor-lista .leitor-lista { margin: 0 0 0 14px; }
+.leitor-lista .leitor-item { display: flex; flex-direction: column; align-items: flex-start; width: 100%; margin: 2px 0; text-align: left; border-color: transparent; background: transparent; overflow-wrap: anywhere; }
+.leitor-lista .leitor-item:hover { background: color-mix(in srgb, var(--texto) 10%, transparent); }
+.leitor-item mark { background: #f6e05e; color: #1d1d1f; }
+.leitor-busca { display: flex; gap: 6px; }
+.leitor-busca input { flex: 1 1 0; min-width: 0; }
+.leitor-status { margin: 8px 0 0; font-size: 0.9rem; opacity: 0.8; }
+.leitor-grupo { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+.leitor-marcador { display: flex; align-items: center; gap: 6px; }
+.leitor-marcador .leitor-item { flex: 1 1 0; min-width: 0; }
+.leitor-rodape { display: flex; align-items: center; gap: 12px; padding: 8px 12px; border-top: 1px solid var(--borda); }
+.leitor-progresso-rotulo { flex: 0 0 auto; min-width: 6.5em; font-size: 0.85rem; }
+.leitor-rodape input[type="range"] { flex: 1 1 0; min-width: 0; }
+/* O pdf.js anexa um canvas oculto ao body; sem isto a tela de leitura ganha rolagem da página. */
+body:has(#leitura:not([hidden])) { overflow: hidden; }

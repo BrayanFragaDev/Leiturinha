@@ -122,6 +122,21 @@ export async function openFoliateReader(container, blob) {
   }
   view.addEventListener('relocate', onRelocate);
 
+  // O foco pode ficar dentro do iframe do livro, de onde o teclado não sobe ao document.
+  // Repassa as teclas como eventos sintéticos no foliate-view (que sobem ao document).
+  function onSectionLoad(event) {
+    const doc = event.detail?.doc;
+    if (!doc) return;
+    doc.addEventListener('keydown', (e) => {
+      const copy = new KeyboardEvent('keydown', {
+        key: e.key, code: e.code, ctrlKey: e.ctrlKey, altKey: e.altKey, metaKey: e.metaKey,
+        shiftKey: e.shiftKey, bubbles: true, cancelable: true,
+      });
+      if (!view.dispatchEvent(copy) || copy.defaultPrevented) e.preventDefault();
+    });
+  }
+  view.addEventListener('load', onSectionLoad);
+
   // Depois do destroy() o foliate não termina mais as navegações (o iframe sumiu) e, se o
   // renderer for chamado já destruído, ele cria uma visão órfã e lança num ResizeObserver.
   // Por isso: não chama o foliate se já foi destruído, e solta a chamada pendente ao destruir.
@@ -265,6 +280,7 @@ export async function openFoliateReader(container, blob) {
       destroyed = true;
       signalDestroyed();
       view.removeEventListener('relocate', onRelocate);
+      view.removeEventListener('load', onSectionLoad);
       listeners.length = 0;
       try {
         view.close();
