@@ -68,3 +68,50 @@ body {
 .pdf-text-layer ::selection {
   background: rgba(0, 100, 255, 0.3);
 }
+
+/* Biblioteca */
+:root { --borda: color-mix(in srgb, var(--texto) 22%, transparent); --destaque: #2b6cb0; }
+
+#biblioteca { max-width: 1100px; margin: 0 auto; padding: 0 16px 32px; }
+
+:focus-visible { outline: 3px solid var(--destaque); outline-offset: 2px; }
+
+.faixa-temporaria {
+  position: sticky; top: 0; z-index: 5; margin: 0 -16px; padding: 8px 16px;
+  background: #b7791f; color: #fff; font-size: 0.9rem; text-align: center;
+}
+
+.bib-topo { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; padding: 20px 0 12px; }
+.bib-topo h1 { flex: 1 1 100%; margin: 0; font-size: 1.6rem; }
+.bib-topo .busca { flex: 1 1 200px; min-width: 0; }
+.bib-topo :is(input, select, button) {
+  font: inherit; padding: 8px 12px; border: 1px solid var(--borda); border-radius: 6px;
+  background: var(--fundo); color: var(--texto);
+}
+.botao-primario { background: var(--destaque) !important; color: #fff !important; border-color: transparent !important; cursor: pointer; }
+
+.estante {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 16px;
+  min-height: 240px; padding: 12px; border: 2px dashed transparent; border-radius: 10px;
+}
+.estante.arrastando { border-color: var(--destaque); background: color-mix(in srgb, var(--destaque) 10%, transparent); }
+.estante-vazia { grid-column: 1 / -1; align-self: center; text-align: center; opacity: 0.7; }
+
+.cartao { position: relative; display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.cartao-abrir { display: flex; flex-direction: column; gap: 4px; color: inherit; text-decoration: none; min-width: 0; }
+.capa { width: 100%; aspect-ratio: 2 / 3; object-fit: cover; border-radius: 6px; background: var(--borda); box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3); }
+.capa-gerada {
+  display: flex; align-items: center; justify-content: center; padding: 10px; overflow: hidden;
+  color: #fff; font-weight: 600; text-align: center; overflow-wrap: anywhere;
+}
+.cartao-titulo { font-weight: 600; font-size: 0.95rem; overflow-wrap: anywhere; }
+.cartao-autor, .cartao-info { font-size: 0.8rem; opacity: 0.75; overflow-wrap: anywhere; }
+.cartao-remover {
+  align-self: flex-start; font: inherit; font-size: 0.8rem; padding: 4px 8px; cursor: pointer;
+  border: 1px solid var(--borda); border-radius: 6px; background: var(--fundo); color: var(--texto);
+}
+
+.bib-rodape { padding-top: 16px; font-size: 0.85rem; opacity: 0.75; }
+
+#avisos { position: fixed; left: 16px; right: 16px; bottom: 16px; z-index: 20; display: flex; flex-direction: column; align-items: center; gap: 8px; pointer-events: none; }
+.aviso { max-width: 100%; padding: 10px 16px; border-radius: 8px; background: #222; color: #fff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4); }
