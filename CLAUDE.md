@@ -6,7 +6,7 @@ Leitor de PDF, ePub e ebooks no navegador. Os arquivos ficam só no aparelho do 
 
 ```bash
 npm start        # servidor local em http://localhost:5174
-npm test         # node --test test/
+npm test         # node --test test/*.test.js
 node tools/make-fixtures.js   # gera arquivos de exemplo em fixtures/
 ```
 
