@@ -78,6 +78,11 @@ export async function openFoliateReader(container, blob) {
   try {
     await view.open(file);
   } catch (err) {
+    try {
+      view.book?.destroy?.();
+    } catch {
+      // nada a liberar
+    }
     view.remove();
     throw err;
   }
@@ -135,11 +140,11 @@ export async function openFoliateReader(container, blob) {
   }
 
   // CFI ou href -> destino do renderer, ou null se não der para resolver.
-  function resolve(target) {
+  async function resolve(target) {
     try {
-      const resolved = /^epubcfi\(/.test(target)
+      const resolved = await (/^epubcfi\(/.test(target)
         ? view.resolveCFI(target)
-        : book.resolveHref(target);
+        : book.resolveHref(target));
       const index = resolved?.index;
       if (!Number.isInteger(index) || index < 0 || index >= sectionCount) return null;
       return resolved;
@@ -182,7 +187,7 @@ export async function openFoliateReader(container, blob) {
 
     goTo(location) {
       return guard(async () => {
-        const resolved = typeof location === 'string' && location ? resolve(location) : null;
+        const resolved = typeof location === 'string' && location ? await resolve(location) : null;
         if (resolved) {
           try {
             await view.renderer.goTo(resolved);
@@ -267,6 +272,11 @@ export async function openFoliateReader(container, blob) {
         // já fechado
       }
       view.remove();
+      try {
+        book.destroy?.(); // revoga os object URLs do livro
+      } catch {
+        // nada a liberar
+      }
     },
   };
 }
