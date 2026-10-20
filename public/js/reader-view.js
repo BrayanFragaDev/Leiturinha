@@ -124,9 +124,11 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
       return handle;
     }
     reader = opened;
-  } catch {
+  } catch (err) {
     if (!cancelled()) {
-      showToast(`Não foi possível abrir ${book.title}`);
+      showToast(err?.code === 'drm'
+        ? `Este livro tem DRM e não pode ser aberto: ${book.title}`
+        : `Não foi possível abrir ${book.title}`);
       destroy();
       onClose();
     }

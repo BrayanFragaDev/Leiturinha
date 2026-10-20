@@ -131,9 +131,11 @@ export function mountLibraryView(root, { library, store, onOpen }) {
       if (meta?.author) fields.author = meta.author;
       if (meta?.cover) fields.cover = meta.cover;
       if (Object.keys(fields).length) await library.updateMeta(book.id, fields);
-    } catch {
+    } catch (err) {
       try { await library.remove(book.id); } catch { /* nada a limpar */ }
-      showToast(`Não foi possível abrir ${file.name}`);
+      showToast(err?.code === 'drm'
+        ? `Este livro tem DRM e não pode ser aberto: ${file.name}`
+        : `Não foi possível abrir ${file.name}`);
     }
   }
 

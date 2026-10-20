@@ -125,6 +125,32 @@ function buildEpub({ cap1 = DEFAULT_CAP1, extra = [] } = {}) {
   ]);
 }
 
+// ePub com DRM: rights.xml (Adobe ADEPT) e capítulo cifrado com AES no encryption.xml.
+function buildDrmEpub() {
+  return buildEpub({
+    extra: [
+      {
+        name: 'META-INF/rights.xml',
+        data:
+          `<?xml version="1.0"?>\n` +
+          `<adept:rights xmlns:adept="http://ns.adobe.com/adept"><adept:licenseToken/></adept:rights>\n`,
+      },
+      {
+        name: 'META-INF/encryption.xml',
+        data:
+          `<?xml version="1.0" encoding="UTF-8"?>\n` +
+          `<encryption xmlns="urn:oasis:names:tc:opendocument:xmlns:container" ` +
+          `xmlns:enc="http://www.w3.org/2001/04/xmlenc#">\n` +
+          `  <enc:EncryptedData>\n` +
+          `    <enc:EncryptionMethod Algorithm="http://www.w3.org/2001/04/xmlenc#aes128-cbc"/>\n` +
+          `    <enc:CipherData><enc:CipherReference URI="OEBPS/cap1.xhtml"/></enc:CipherData>\n` +
+          `  </enc:EncryptedData>\n` +
+          `</encryption>\n`,
+      },
+    ],
+  });
+}
+
 // ePub de sonda: script inline e recursos remotos que a CSP do app deve bloquear.
 function buildProbeEpub() {
   return buildEpub({
@@ -175,6 +201,7 @@ export function buildFixtures() {
     'amostra.pdf': buildPdf(),
     'amostra.epub': buildEpub(),
     'amostra.cbz': buildCbz(),
+    'drm.epub': buildDrmEpub(),
     'sonda.epub': buildProbeEpub(),
     'falso.pdf': utf8('isto não é pdf'),
   };

@@ -5,6 +5,7 @@
 
 import '../vendor/foliate-js/view.js';
 import { formatPercent } from './format.js';
+import { hasDrm, drmError } from './drm.js';
 
 // Valores literais: o conteúdo do livro fica num iframe e não herda as variáveis CSS do app.
 const THEMES = {
@@ -54,6 +55,19 @@ function tocOf(items) {
   }));
 }
 
+// O foliate não recusa livros com DRM: no ePub um algoritmo desconhecido só gera aviso e no
+// MOBI o campo encryption é ignorado. Lê o que a regra de drm.js precisa.
+async function isProtected(book) {
+  const palmdoc = book?.mobi?.headers?.palmdoc; // MOBI6 e KF8 guardam o MOBI em book.mobi
+  if (palmdoc) return hasDrm({ mobiEncryption: palmdoc.encryption });
+  if (typeof book?.loadText !== 'function') return false; // FB2, CBZ
+  const [rightsXml, encryptionXml] = await Promise.all([
+    book.loadText('META-INF/rights.xml'),
+    book.loadText('META-INF/encryption.xml'),
+  ]);
+  return hasDrm({ rightsXml, encryptionXml });
+}
+
 /**
  * @param {HTMLElement} container
  * @param {Blob} blob
@@ -77,6 +91,7 @@ export async function openFoliateReader(container, blob) {
 
   try {
     await view.open(file);
+    if (await isProtected(view.book)) throw drmError();
   } catch (err) {
     try {
       view.book?.destroy?.();
