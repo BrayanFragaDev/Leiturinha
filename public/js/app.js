@@ -29,12 +29,14 @@ const libraryView = mountLibraryView(libraryEl, {
 let readerAbort = null;
 let readerHandle = null;
 
+// Devolve a promise do salvamento de progresso, para a biblioteca listar o % já gravado.
 function closeReader() {
   readerAbort?.abort();
   readerAbort = null;
-  readerHandle?.destroy();
+  const saved = readerHandle?.destroy();
   readerHandle = null;
   readerEl.textContent = '';
+  return Promise.resolve(saved);
 }
 
 function showReader(id) {
@@ -61,10 +63,10 @@ function render() {
     readerEl.hidden = false;
     showReader(route.id);
   } else {
-    closeReader();
+    const saved = closeReader();
     readerEl.hidden = true;
     libraryEl.hidden = false;
-    libraryView.refresh();
+    saved.then(() => libraryView.refresh());
   }
 }
 

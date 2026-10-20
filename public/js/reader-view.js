@@ -57,14 +57,18 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   let wrapper = null;
   const cleanups = [];
 
+  // Gravações de progresso em série; destroy() e close() esperam por ela.
+  let savePromise = Promise.resolve();
+
   function destroy() {
-    if (destroyed) return;
+    if (destroyed) return savePromise;
     destroyed = true;
     for (const fn of cleanups.splice(0)) {
       try { fn(); } catch { /* já liberado */ }
     }
     try { reader?.destroy(); } catch { /* já liberado */ }
     wrapper?.remove();
+    return savePromise;
   }
   const handle = { destroy };
   signal?.addEventListener('abort', destroy, { once: true });
@@ -145,14 +149,19 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   function flush() {
     clearTimeout(saveTimer);
     saveTimer = null;
-    if (!dirty) return;
+    if (!dirty) return savePromise;
     dirty = false;
     const { location, fraction } = current;
-    if (typeof location !== 'string' || !location) return;
-    if (location === savedLocation && fraction === savedFraction) return;
-    savedLocation = location;
-    savedFraction = fraction;
-    library.saveProgress(id, { location, fraction }).catch(() => {});
+    if (typeof location !== 'string' || !location) return savePromise;
+    if (location === savedLocation && fraction === savedFraction) return savePromise;
+    savePromise = savePromise
+      .then(() => library.saveProgress(id, { location, fraction }))
+      .then(() => {
+        savedLocation = location;
+        savedFraction = fraction;
+      })
+      .catch(() => {});
+    return savePromise;
   }
 
   reader.onRelocate((pos) => {
@@ -398,8 +407,8 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   });
 
   // --- voltar ---
-  function close() {
-    flush();
+  async function close() {
+    await flush();
     onClose();
   }
   backBtn.addEventListener('click', close);
