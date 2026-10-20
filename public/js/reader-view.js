@@ -102,7 +102,7 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   const zoneNext = el('div', { className: 'leitor-zona leitor-zona-dir' });
   zonePrev.setAttribute('aria-hidden', 'true');
   zoneNext.setAttribute('aria-hidden', 'true');
-  const panel = el('aside', { className: 'leitor-painel', hidden: true });
+  const panel = el('aside', { className: 'leitor-painel', id: 'leitor-painel', hidden: true });
   const body = el('div', { className: 'leitor-corpo' }, area, zonePrev, zoneNext, panel);
 
   const progressLabel = el('span', { className: 'leitor-progresso-rotulo', textContent: '' });
@@ -111,6 +111,7 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   const footer = el('footer', { className: 'leitor-rodape' }, progressLabel, slider);
 
   wrapper = el('div', { className: 'leitor' }, topbar, body, footer);
+  wrapper.dataset.formato = book.format; // o CSS ajusta a zona direita só para o PDF
   root.append(wrapper);
 
   // --- abrir o leitor ---
@@ -195,6 +196,7 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   let openPanel = null;
 
   function setPanel(name) {
+    const previous = openPanel;
     openPanel = name;
     for (const [key, p] of Object.entries(panels)) {
       p.button.setAttribute('aria-expanded', String(key === name));
@@ -204,11 +206,15 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
     if (name) {
       panel.setAttribute('aria-label', panels[name].label);
       panels[name].render();
+    } else if (previous) {
+      // Fechado por Esc, pelo botão ou por uma navegação: o foco volta a quem abriu o painel.
+      panels[previous].button.focus();
     }
   }
 
   function registerPanel(name, button, label, render) {
     button.setAttribute('aria-expanded', 'false');
+    button.setAttribute('aria-controls', panel.id);
     panels[name] = { button, label, render };
     button.addEventListener('click', () => setPanel(openPanel === name ? null : name));
   }
@@ -247,6 +253,10 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
   // Busca: cada envio abre uma nova geração; a anterior sai do for-await ao notar a troca.
   let searchGen = 0;
   let searchQuery = '';
+  // Lista e status ficam fora do painel (que é recriado a cada abertura): uma busca em andamento
+  // continua escrevendo na lista que será exibida, e reabrir mostra o que já foi achado.
+  const searchResults = el('ul', { className: 'leitor-lista' });
+  const searchStatus = el('p', { className: 'leitor-status', role: 'status' });
   cleanups.push(() => { searchGen++; });
 
   async function runSearch(query, resultsEl, statusEl) {
@@ -283,8 +293,8 @@ export async function mountReaderView(root, { library, id, onClose, signal }) {
     input.setAttribute('aria-label', 'Buscar no livro');
     const submit = el('button', { type: 'submit', textContent: 'Buscar' });
     const form = el('form', { className: 'leitor-busca' }, input, submit);
-    const status = el('p', { className: 'leitor-status', role: 'status' });
-    const results = el('ul', { className: 'leitor-lista' });
+    const status = searchStatus;
+    const results = searchResults;
     form.addEventListener('submit', (e) => {
       e.preventDefault();
       const q = input.value.trim();

@@ -130,7 +130,9 @@ body {
 .leitor-area { position: absolute; inset: 0; background: var(--fundo); overflow: hidden; }
 .leitor-zona { position: absolute; top: 0; bottom: 0; width: 20%; z-index: 2; cursor: pointer; }
 .leitor-zona-esq { left: 0; }
-.leitor-zona-dir { right: 17px; }
+.leitor-zona-dir { right: 0; }
+/* No PDF a barra de rolagem do leitor ocupa 17px na direita. */
+.leitor[data-formato="pdf"] .leitor-zona-dir { right: 17px; }
 .leitor-painel { position: absolute; top: 0; right: 0; bottom: 0; z-index: 4; width: min(360px, 100%); padding: 12px 16px; overflow: auto; background: var(--fundo); color: var(--texto); border-left: 1px solid var(--borda); box-shadow: -2px 0 8px rgba(0, 0, 0, 0.25); }
 .leitor-painel h2 { margin: 0 0 12px; font-size: 1.1rem; }
 .leitor-painel button, .leitor-painel input[type="search"] { padding: 6px 10px; border: 1px solid var(--borda); border-radius: 6px; background: var(--fundo); color: var(--texto); cursor: pointer; }

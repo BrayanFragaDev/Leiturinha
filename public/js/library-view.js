@@ -83,9 +83,10 @@ export function mountLibraryView(root, { library, store, onOpen }) {
     if (book.cover instanceof Blob) {
       const url = URL.createObjectURL(book.cover);
       coverUrls.push(url);
-      cover = el('img', { className: 'capa', src: url, alt: `Capa de ${book.title}`, loading: 'lazy' });
+      cover = el('img', { className: 'capa', src: url, alt: '', loading: 'lazy' });
     } else {
       cover = el('div', { className: 'capa capa-gerada', title: book.title }, book.title);
+      cover.setAttribute('aria-hidden', 'true'); // o título já é lido pelo link do cartão
       cover.style.background = coverColor(book.id);
     }
     const open = el('a', { className: 'cartao-abrir', href: `#/ler/${encodeURIComponent(book.id)}` },
