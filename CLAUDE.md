@@ -27,6 +27,8 @@ public/            site estático (é o que vai para a hospedagem)
     prefs.js       tema e fonte (localStorage)
     format.js      formatação de %, tamanho e data
     locations.js   locais de PDF ("pdf:<página>")
+    cover-color.js cor da capa gerada a partir do título
+    toast.js       avisos curtos na tela
     reader-pdf.js      adaptador pdf.js
     reader-foliate.js  adaptador foliate-js (epub, mobi, azw3, fb2, cbz)
     library-view.js, reader-view.js   telas
